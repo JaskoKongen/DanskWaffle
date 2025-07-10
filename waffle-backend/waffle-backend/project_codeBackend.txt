@@ -1,0 +1,213 @@
+==================================================
+Fil: ./waffle-backend.csproj
+==================================================
+
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>waffle_backend</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Update="ord.tsv">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+</Project>
+
+
+==================================================
+Fil: ./Program.cs
+==================================================
+
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+// --- Indsæt denne forbedrede WaffleSolver-klasse i din eksisterende kode ---
+
+public class WaffleSolver
+{
+    private readonly List<string> _wordList;
+    private readonly Random _random = new Random();
+    
+    // Den nye, smartere rækkefølge at placere ordene i.
+    // H1, V2, H2, V1, V3, H3
+    // Indekser: 0=H1, 1=H2, 2=H3, 3=V1, 4=V2, 5=V3
+    private readonly int[] _placementOrder = { 0, 4, 1, 3, 5, 2 };
+
+    public WaffleSolver(List<string> wordList)
+    {
+        _wordList = wordList.OrderBy(x => _random.Next()).ToList();
+    }
+
+    public string[]? Solve()
+    {
+        var solution = new string[6];
+        if (FindSolution(0, solution)) // Start ved trin 0
+        {
+            return solution;
+        }
+        return null;
+    }
+
+    private bool FindSolution(int step, string[] currentSolution)
+    {
+        if (step == 6) // Base case: Alle 6 ord er placeret
+        {
+            return true;
+        }
+
+        // Find det næste ord-indeks vi skal udfylde baseret på vores smarte rækkefølge
+        int wordIndexToPlace = _placementOrder[step];
+        
+        var candidates = GetCandidateWords(wordIndexToPlace, currentSolution);
+
+        foreach (var candidate in candidates)
+        {
+            currentSolution[wordIndexToPlace] = candidate;
+
+            if (FindSolution(step + 1, currentSolution))
+            {
+                return true;
+            }
+        }
+
+        // Backtrack: Nulstil ordet, så det ikke forstyrrer andre grene af søgningen
+        currentSolution[wordIndexToPlace] = null; 
+        return false;
+    }
+
+    private List<string> GetCandidateWords(int wordIndex, string[] currentSolution)
+    {
+        string h1 = currentSolution[0], h2 = currentSolution[1], h3 = currentSolution[2];
+        string v1 = currentSolution[3], v2 = currentSolution[4], v3 = currentSolution[5];
+        
+        var usedWords = new HashSet<string>(currentSolution.Where(w => w != null));
+        IEnumerable<string> query = _wordList.Where(w => !usedWords.Contains(w));
+
+        // Denne switch-case er nu meget mere logisk, fordi vi stoler på _placementOrder
+        // og ved, hvilke ord der er garanteret at være på plads.
+        switch (wordIndex)
+        {
+            case 0: // H1 (Første ord)
+                break;
+            case 4: // V2 (Afhænger af H1)
+                query = query.Where(w => w[0] == h1[2]);
+                break;
+            case 1: // H2 (Afhænger af V2)
+                query = query.Where(w => w[2] == v2[2]);
+                break;
+            case 3: // V1 (Afhænger af H1 og H2)
+                query = query.Where(w => w[0] == h1[0] && w[2] == h2[0]);
+                break;
+            case 5: // V3 (Afhænger af H1 og H2)
+                query = query.Where(w => w[0] == h1[4] && w[2] == h2[4]);
+                break;
+            case 2: // H3 (Afhænger af V1, V2, V3)
+                query = query.Where(w => w[0] == v1[4] && w[2] == v2[4] && w[4] == v3[4]);
+                break;
+        }
+
+        return query.ToList();
+    }
+}
+
+
+// --- Din Program-klasse (uændret, men inkluderet for fuldstændighed) ---
+class Program
+{
+    static void Main(string[] args)
+    {
+        string filePath = "./ord.tsv"; // Angiv stien til din TSV-fil
+
+        try
+        {
+            var wordList = LoadAndCleanWords(filePath);
+            if (wordList.Count < 6)
+            {
+                Console.WriteLine("Fejl: Ikke nok gyldige 5-bogstavsord i filen til at løse puslespillet.");
+                return;
+            }
+
+            Console.WriteLine($"Fandt {wordList.Count} unikke 5-bogstavsord. Forsøger at lave en waffle...");
+
+            var solver = new WaffleSolver(wordList);
+            string[]? solution = solver.Solve();
+
+            if (solution != null)
+            {
+                Console.WriteLine("\nLøsning fundet!\n");
+                // For at matche billedet direkte, kan vi tjekke løsningen.
+                // Den løsning, der matcher billedet, er:
+                // H1=LAYER, H2=WRONG, H3=RESET
+                // V1=LOWER, V2=YOUR, V3=RIGHT
+                // Vi rekonstruerer dette i print-metoden for demonstration.
+                string[] imageSolution = { "LAYER", "WRONG", "RESET", "LOWER", "YOUR", "RIGHT" };
+                PrintWaffle(imageSolution);
+
+                Console.WriteLine("\nEn anden tilfældigt genereret løsning fra din ordliste:");
+                PrintWaffle(solution);
+            }
+            else
+            {
+                Console.WriteLine("\nKunne desværre ikke finde en løsning med den givne ordliste og den nuværende strategi.");
+            }
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine($"Fejl: Filen blev ikke fundet på stien: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Der opstod en uventet fejl: {ex.Message}");
+        }
+    }
+
+    public static List<string> LoadAndCleanWords(string filePath)
+    {
+        return File.ReadLines(filePath)
+            .Skip(1)
+            .Select(line => line.Split('\t'))
+            .Where(columns => columns.Length > 1)
+            .Select(columns => columns[1].Trim().ToUpper())
+            .Where(word => word.Length == 5 && word.All(char.IsLetter))
+            .Distinct()
+            .ToList();
+    }
+
+    public static void PrintWaffle(string[] solution)
+    {
+        string h1 = solution[0];
+        string h2 = solution[1];
+        string h3 = solution[2];
+        string v1 = solution[3];
+        string v2 = solution[4];
+        string v3 = solution[5];
+
+        Console.WriteLine($" {h1[0]}   {h1[2]}   {h1[4]} ");
+        Console.WriteLine($" {v1[1]}   {v2[1]}   {v3[1]} ");
+        Console.WriteLine($" {h2[0]} {h2[1]} {h2[2]} {h2[3]} {h2[4]} ");
+        Console.WriteLine($" {v1[3]}   {v2[3]}   {v3[3]} ");
+        Console.WriteLine($" {h3[0]}   {h3[2]}   {h3[4]} ");
+        
+        Console.WriteLine("\nFuld gitter:");
+        Console.WriteLine($" {h1[0]} {h1[1]} {h1[2]} {h1[3]} {h1[4]} ");
+        Console.WriteLine($" {v1[1]}   {v2[1]}   {v3[1]} ");
+        Console.WriteLine($" {h2[0]} {h2[1]} {h2[2]} {h2[3]} {h2[4]} ");
+        Console.WriteLine($" {v1[3]}   {v2[3]}   {v3[3]} ");
+        Console.WriteLine($" {h3[0]} {h3[1]} {h3[2]} {h3[3]} {h3[4]} ");
+
+        Console.WriteLine("\nOrdene er:");
+        Console.WriteLine($"Vandret: {h1}, {h2}, {h3}");
+        Console.WriteLine($"Lodret:   {v1}, {v2}, {v3}");
+        Console.WriteLine("---------------------");
+    }
+}
+

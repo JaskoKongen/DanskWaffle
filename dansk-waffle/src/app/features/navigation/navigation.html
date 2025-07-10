@@ -1,0 +1,19 @@
+<!-- Fil: ./app/features/navigation/nav-bar.html -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/" class="brand-link">Dansk Waffle</a>
+  </div>
+  <div class="navbar-links">
+    <a
+      routerLink="/daily"
+      routerLinkActive="active-link"
+      [routerLinkActiveOptions]="{exact: true}">
+      Dagens Waffle
+    </a>
+    <a
+      routerLink="/free-play"
+      routerLinkActive="active-link">
+      Fri Leg
+    </a>
+  </div>
+</nav>

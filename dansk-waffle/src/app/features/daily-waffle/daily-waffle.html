@@ -1,0 +1,16 @@
+<!-- Fil: ./app/features/daily-waffle/daily-waffle.html -->
+@if (showAlreadySolvedPopup()) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <h2>Allerede løst!</h2>
+      <p>Du har allerede løst dagens Waffle. Kom igen i morgen!</p>
+      <button (click)="navigateToFreePlay()">Spil i 'Fri Leg'</button>
+    </div>
+  </div>
+} @else {
+  @if (puzzle(); as p) {
+    <app-waffle-grid [puzzle]="p" (puzzleWon)="handlePuzzleWon()"></app-waffle-grid>
+  } @else {
+    <p>Henter dagens Waffle...</p>
+  }
+}

@@ -1,0 +1,60 @@
+<!-- Fil: ./app/features/waffle-grid/waffle-grid.html -->
+
+@if (layout().length > 0) {
+  <div class="waffle-container">
+    <div class="waffle-grid" cdkDropListGroup>
+      @for (row of layout(); track rowIndex; let rowIndex = $index) {
+        @for (tile of row; track colIndex; let colIndex = $index) {
+          <div class="drop-list-cell"
+               [class.is-origin-placeholder]="isOriginCell(rowIndex, colIndex)"
+               cdkDropList
+               [cdkDropListData]="[rowIndex, colIndex]"
+               (cdkDropListDropped)="drop($event)"
+               [cdkDropListEnterPredicate]="isDropAllowed">
+
+            @if (tile) {
+              <div class="tile" cdkDrag
+                   (cdkDragStarted)="onDragStarted($event)"
+                   (cdkDragEnded)="onDragEnded()"
+                   [class.correct]="tileStatuses()[rowIndex][colIndex] === 'correct'"
+                   [class.present]="tileStatuses()[rowIndex][colIndex] === 'present'"
+                   [cdkDragDisabled]="tileStatuses()[rowIndex][colIndex] === 'correct' || gameState() !== 'playing'">
+                {{ tile }}
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- NYT: Visning af resterende swaps -->
+    <div class="stats">
+      Swaps tilbage: <strong>{{ swapsRemaining() }}</strong>
+    </div>
+  </div>
+
+  <!-- NYT: Pop-up for win/loss state -->
+  @if (gameState() !== 'playing') {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        @if (gameState() === 'won') {
+          <h2>Godt klaret!</h2>
+          <p>Du løste dagens Waffle.</p>
+          <div class="stars">
+            @for (star of stars(); track $index) {
+              <span>⭐</span>
+            }
+          </div>
+          <button (click)="resetGame()">Spil igen</button>
+        } @else if (gameState() === 'lost') {
+          <h2>Desværre!</h2>
+          <p>Du løb tør for swaps. Bedre held næste gang!</p>
+          <button (click)="resetGame()">Prøv igen</button>
+        }
+      </div>
+    </div>
+  }
+
+} @else {
+  <p>Henter dagens Waffle...</p>
+}

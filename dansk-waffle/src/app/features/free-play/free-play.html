@@ -1,0 +1,7 @@
+<!-- Fil: ./app/features/free-play/free-play.html -->
+@if (puzzle(); as p) {
+  <!-- WaffleGrid udsender 'puzzleWon' hændelsen, som vi bruger til at hente et nyt puslespil -->
+  <app-waffle-grid [puzzle]="p" (puzzleWon)="fetchNewPuzzle()"></app-waffle-grid>
+} @else {
+  <p>Genererer en ny Waffle...</p>
+}

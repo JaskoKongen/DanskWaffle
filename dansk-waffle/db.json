@@ -1,0 +1,19 @@
+{
+  "puzzle": {
+    "solutionWords": [
+      { "word": "MELON", "orientation": "horizontal", "row": 0 },
+      { "word": "DELES", "orientation": "horizontal", "row": 2 },
+      { "word": "TRANE", "orientation": "horizontal", "row": 4 },
+      { "word": "MØDET", "orientation": "vertical", "col": 0 },
+      { "word": "LILLA", "orientation": "vertical", "col": 2 },
+      { "word": "NISSE", "orientation": "vertical", "col": 4 }
+    ],
+    "shuffledLayout": [
+      ["T", "E", "S", "O", "E"],
+      ["R", null, "I", null, "S"],
+      ["D", "L", "E", "L", "E"],
+      ["N", null, "L", null, "I"],
+      ["M", "Ø", "A", "N", "E"]
+    ]
+  }
+}

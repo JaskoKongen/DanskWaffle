@@ -1,0 +1,644 @@
+==================================================
+Fil: ./main.ts
+==================================================
+
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { App } from './app/app';
+
+bootstrapApplication(App, appConfig)
+  .catch((err) => console.error(err));
+
+
+==================================================
+Fil: ./index.html
+==================================================
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DanskWaffle</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+
+
+==================================================
+Fil: ./styles.scss
+==================================================
+
+/* Du kan tilføje globale styles til denne fil, og også importere andre style-filer */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f7f7f7; // En behagelig baggrundsfarve
+}
+
+
+==================================================
+Fil: ./app/app.scss
+==================================================
+
+
+
+==================================================
+Fil: ./app/app.spec.ts
+==================================================
+
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [App],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it('should render title', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, dansk-waffle');
+  });
+});
+
+
+==================================================
+Fil: ./app/app.ts
+==================================================
+
+// src/app/app.component.ts
+import { Component } from '@angular/core';
+import { WaffleGrid } from './features/waffle-grid/waffle-grid'; // <-- Importer
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [WaffleGrid], // <-- Tilføj til imports
+  templateUrl: './app.html',
+  styleUrl: './app.scss'
+})
+export class App {
+  title = 'dansk-waffle';
+}
+
+
+==================================================
+Fil: ./app/app.html
+==================================================
+
+<app-waffle-grid></app-waffle-grid>
+
+
+==================================================
+Fil: ./app/app.config.ts
+==================================================
+
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+import { routes } from './app.routes';
+import {provideHttpClient} from '@angular/common/http';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
+    provideHttpClient()
+  ]
+};
+
+
+==================================================
+Fil: ./app/app.routes.ts
+==================================================
+
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [];
+
+
+==================================================
+Fil: ./app/core/models/puzzle-model.ts
+==================================================
+
+export interface SolutionWord {
+  word: string;
+  orientation: 'horizontal' | 'vertical';
+  row?: number;
+  col?: number;
+}
+
+export interface Puzzle {
+  solutionWords: SolutionWord[];
+  shuffledLayout: (string | null)[][];
+}
+
+
+==================================================
+Fil: ./app/core/services/puzzle-service.spec.ts
+==================================================
+
+import { TestBed } from '@angular/core/testing';
+
+import { PuzzleService } from './puzzle-service';
+
+describe('PuzzleService', () => {
+  let service: PuzzleService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(PuzzleService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+
+==================================================
+Fil: ./app/core/services/puzzle-service.ts
+==================================================
+
+// src/app/core/services/puzzle.service.ts
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Puzzle } from '../models/puzzle-model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PuzzleService {
+  // Den nye, moderne måde at injecte dependencies på
+  private http = inject(HttpClient);
+
+  private puzzleUrl = 'http://10.139.13.207:5000/api/puzzle';
+
+
+    getPuzzle(): Observable<Puzzle> {
+    // Vi fortæller http.get, at vi forventer at modtage data,
+    // der matcher vores Puzzle interface.
+    return this.http.get<Puzzle>(this.puzzleUrl);
+  }
+}
+
+
+==================================================
+Fil: ./app/features/waffle-grid/waffle-grid.scss
+==================================================
+
+// Fil: ./app/features/waffle-grid/waffle-grid.scss
+
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+// NYT: Container til at holde gitter og stats sammen
+.waffle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.waffle-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: 400px;
+  height: 400px;
+}
+
+.drop-list-cell {
+  border-radius: 4px;
+  position: relative;
+}
+
+.drop-list-cell.is-origin-placeholder::after {
+  content: '';
+  box-sizing: border-box;
+  background: #f0f0f0;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.tile {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #d3d6da;
+  border-radius: 4px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  text-transform: uppercase;
+  user-select: none;
+  cursor: grab;
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: background-color 0.1s ease, transform 0.1s ease;
+}
+
+.tile.correct {
+  background-color: #6aaa64;
+  cursor: default;
+  &:active { cursor: default; }
+}
+
+.tile.present {
+  background-color: #c9b458;
+  color: white;
+}
+
+.tile:active {
+  cursor: grabbing;
+}
+
+// -- CDK Styling --
+
+.cdk-drag-preview {
+  @extend .tile;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+  0 8px 10px 1px rgba(0, 0, 0, 0.14),
+  0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tile.cdk-drag-dragging {
+  visibility: hidden;
+}
+
+// --- NY STYLING FOR SCORE OG MODAL ---
+
+.stats {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem 3rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 400px;
+
+  h2 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  p {
+    color: #555;
+    font-size: 1.1rem;
+  }
+
+  button {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    background-color: #6aaa64; // Samme farve som 'correct' brik
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #5a9a54;
+    }
+  }
+}
+
+.stars {
+  font-size: 2.5rem;
+  margin: 1rem 0;
+  color: #ffc107; // Guld-farve til stjerner
+}
+
+
+==================================================
+Fil: ./app/features/waffle-grid/waffle-grid.spec.ts
+==================================================
+
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { WaffleGrid } from './waffle-grid';
+
+describe('WaffleGrid', () => {
+  let component: WaffleGrid;
+  let fixture: ComponentFixture<WaffleGrid>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [WaffleGrid]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(WaffleGrid);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+==================================================
+Fil: ./app/features/waffle-grid/waffle-grid.ts
+==================================================
+
+// Fil: ./app/features/waffle-grid/waffle-grid.ts
+
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PuzzleService } from '../../core/services/puzzle-service';
+import { CdkDrag, CdkDropList, CdkDropListGroup, CdkDragDrop, CdkDragPlaceholder, CdkDragStart, CdkDragEnd } from '@angular/cdk/drag-drop';
+
+export type TileStatus = 'correct' | 'present' | 'absent';
+export type GameState = 'playing' | 'won' | 'lost';
+
+@Component({
+  selector: 'app-waffle-grid',
+  standalone: true,
+  imports: [ CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPlaceholder],
+  templateUrl: './waffle-grid.html',
+  styleUrl: './waffle-grid.scss'
+})
+export class WaffleGrid {
+  private puzzleService = inject(PuzzleService);
+  private puzzle = toSignal(this.puzzleService.getPuzzle());
+
+  public layout = signal<(string | null)[][]>([]);
+  public swapsRemaining = signal(15);
+  public gameState = signal<GameState>('playing');
+  public dragStartCoords = signal<{row: number, col: number} | null>(null);
+
+  public starRating = computed(() => {
+    if (this.gameState() !== 'won') return 0;
+    const swapsUsed = 15 - this.swapsRemaining();
+    if (swapsUsed <= 10) return 5;
+    if (swapsUsed === 11) return 4;
+    if (swapsUsed === 12) return 3;
+    if (swapsUsed === 13) return 2;
+    return 1;
+  });
+
+  public stars = computed(() => Array(this.starRating()).fill(0));
+
+  public tileStatuses = computed(() => {
+    const p = this.puzzle();
+    const currentLayout = this.layout();
+    if (!p || currentLayout.length === 0) return [];
+    const statuses: TileStatus[][] = Array(5).fill(null).map(() => Array(5).fill('absent'));
+    const priority: Record<TileStatus, number> = { correct: 3, present: 2, absent: 1 };
+    for (const solutionInfo of p.solutionWords) {
+      const isHorizontal = solutionInfo.orientation === 'horizontal';
+      const wordIndex = isHorizontal ? solutionInfo.row! : solutionInfo.col!;
+      const userGuessArr: (string | null)[] = Array(5).fill(null).map((_, i) => isHorizontal ? currentLayout[wordIndex][i] : currentLayout[i][wordIndex]);
+      if (userGuessArr.includes(null)) continue;
+      const guess = userGuessArr as string[];
+      const solution = solutionInfo.word.split('');
+      const tempWordStatus: TileStatus[] = Array(5).fill('absent');
+      const solutionCopy = [...solution];
+      for (let i = 0; i < 5; i++) {
+        if (guess[i] === solutionCopy[i]) {
+          tempWordStatus[i] = 'correct';
+          solutionCopy[i] = '$USED$';
+        }
+      }
+      for (let i = 0; i < 5; i++) {
+        if (tempWordStatus[i] !== 'correct') {
+          const letterIndexInSolution = solutionCopy.indexOf(guess[i]);
+          if (letterIndexInSolution !== -1) {
+            tempWordStatus[i] = 'present';
+            solutionCopy[letterIndexInSolution] = '$USED$';
+          }
+        }
+      }
+      for (let i = 0; i < 5; i++) {
+        const r = isHorizontal ? wordIndex : i;
+        const c = isHorizontal ? i : wordIndex;
+        if (priority[tempWordStatus[i]] > priority[statuses[r][c]]) {
+          statuses[r][c] = tempWordStatus[i];
+        }
+      }
+    }
+    return statuses;
+  });
+
+  constructor() {
+    effect(() => {
+      const currentPuzzle = this.puzzle();
+      if (currentPuzzle) {
+        this.resetGame();
+      }
+    });
+  }
+
+  onDragStarted(event: CdkDragStart): void {
+    const [row, col] = event.source.dropContainer.data as number[];
+    this.dragStartCoords.set({ row, col });
+  }
+
+  onDragEnded(): void {
+    this.dragStartCoords.set(null);
+  }
+
+  isOriginCell(row: number, col: number): boolean {
+    const coords = this.dragStartCoords();
+    return !!coords && coords.row === row && coords.col === col;
+  }
+
+  public isDropAllowed = (drag: CdkDrag, drop: CdkDropList<number[]>) => {
+    if (this.gameState() !== 'playing') return false;
+    const [row, col] = drop.data;
+    if ((row % 2 !== 0) && (col % 2 !== 0)) return false;
+    const isLocked = this.tileStatuses()[row][col] === 'correct';
+    return !isLocked;
+  };
+
+  drop(event: CdkDragDrop<number[]>) {
+    if (event.previousContainer === event.container) return;
+
+    const fromCoords = event.previousContainer.data;
+    const toCoords = event.container.data;
+    const newLayout = this.layout().map(row => [...row]);
+    const fromValue = newLayout[fromCoords[0]][fromCoords[1]];
+    const toValue = newLayout[toCoords[0]][toCoords[1]];
+    newLayout[fromCoords[0]][fromCoords[1]] = toValue;
+    newLayout[toCoords[0]][toCoords[1]] = fromValue;
+    this.layout.set(newLayout);
+
+    this.swapsRemaining.update(s => s - 1);
+    this.checkGameState();
+  }
+
+  // ÆNDRING: HELE DENNE METODE ER OPDATERET MED KORREKT LOGIK
+  private checkGameState(): void {
+    const p = this.puzzle();
+    if (!p) return;
+
+    // Tjek for win-condition:
+    const initialLayout = p.shuffledLayout;
+    const currentStatuses = this.tileStatuses();
+    let isWon = true;
+
+    for (let r = 0; r < initialLayout.length; r++) {
+      for (let c = 0; c < initialLayout[r].length; c++) {
+        // Vi tjekker kun de felter, der oprindeligt havde et bogstav (ikke var null)
+        if (initialLayout[r][c] !== null) {
+          if (currentStatuses[r][c] !== 'correct') {
+            isWon = false;
+            break; // Ikke nødvendigt at tjekke mere, vi ved, den ikke er løst
+          }
+        }
+      }
+      if (!isWon) {
+        break;
+      }
+    }
+
+    if (isWon) {
+      this.gameState.set('won');
+      return;
+    }
+
+    // Tjek for lose-condition: Ingen swaps tilbage
+    if (this.swapsRemaining() <= 0) {
+      this.gameState.set('lost');
+    }
+  }
+
+  public resetGame(): void {
+    const currentPuzzle = this.puzzle();
+    if (currentPuzzle) {
+      this.layout.set(currentPuzzle.shuffledLayout.map(row => [...row]));
+    }
+    this.swapsRemaining.set(15);
+    this.gameState.set('playing');
+  }
+}
+
+
+==================================================
+Fil: ./app/features/waffle-grid/waffle-grid.html
+==================================================
+
+<!-- Fil: ./app/features/waffle-grid/waffle-grid.html -->
+
+@if (layout().length > 0) {
+  <div class="waffle-container">
+    <div class="waffle-grid" cdkDropListGroup>
+      @for (row of layout(); track rowIndex; let rowIndex = $index) {
+        @for (tile of row; track colIndex; let colIndex = $index) {
+          <div class="drop-list-cell"
+               [class.is-origin-placeholder]="isOriginCell(rowIndex, colIndex)"
+               cdkDropList
+               [cdkDropListData]="[rowIndex, colIndex]"
+               (cdkDropListDropped)="drop($event)"
+               [cdkDropListEnterPredicate]="isDropAllowed">
+
+            @if (tile) {
+              <div class="tile" cdkDrag
+                   (cdkDragStarted)="onDragStarted($event)"
+                   (cdkDragEnded)="onDragEnded()"
+                   [class.correct]="tileStatuses()[rowIndex][colIndex] === 'correct'"
+                   [class.present]="tileStatuses()[rowIndex][colIndex] === 'present'"
+                   [cdkDragDisabled]="tileStatuses()[rowIndex][colIndex] === 'correct' || gameState() !== 'playing'">
+                {{ tile }}
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- NYT: Visning af resterende swaps -->
+    <div class="stats">
+      Swaps tilbage: <strong>{{ swapsRemaining() }}</strong>
+    </div>
+  </div>
+
+  <!-- NYT: Pop-up for win/loss state -->
+  @if (gameState() !== 'playing') {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        @if (gameState() === 'won') {
+          <h2>Godt klaret!</h2>
+          <p>Du løste dagens Waffle.</p>
+          <div class="stars">
+            @for (star of stars(); track $index) {
+              <span>⭐</span>
+            }
+          </div>
+          <button (click)="resetGame()">Spil igen</button>
+        } @else if (gameState() === 'lost') {
+          <h2>Desværre!</h2>
+          <p>Du løb tør for swaps. Bedre held næste gang!</p>
+          <button (click)="resetGame()">Prøv igen</button>
+        }
+      </div>
+    </div>
+  }
+
+} @else {
+  <p>Henter dagens Waffle...</p>
+}
+
+

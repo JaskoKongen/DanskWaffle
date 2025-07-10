@@ -1,0 +1,17 @@
+/* Du kan tilføje globale styles til denne fil, og også importere andre style-filer */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f7f7f7; // En behagelig baggrundsfarve
+
+  // NYT: Gør plads til den faste navbar i toppen
+  padding-top: 80px;
+  box-sizing: border-box;
+}

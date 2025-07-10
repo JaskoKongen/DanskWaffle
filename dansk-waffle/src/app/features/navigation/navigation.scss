@@ -1,0 +1,44 @@
+/* Fil: ./app/features/navigation/nav-bar.scss */
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 2rem;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand .brand-link {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+}
+
+.navbar-links a {
+  margin-left: 1.5rem;
+  text-decoration: none;
+  color: #555;
+  font-size: 1.1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.navbar-links a:hover {
+  color: #000;
+}
+
+.navbar-links a.active-link {
+  color: #6aaa64;
+  border-bottom-color: #6aaa64;
+  font-weight: 500;
+}
