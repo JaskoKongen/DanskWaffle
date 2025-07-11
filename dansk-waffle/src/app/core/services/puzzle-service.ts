@@ -9,7 +9,7 @@ import { Puzzle } from '../models/puzzle-model';
 })
 export class PuzzleService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:5000/api/puzzle'; // Opdateret base URL
+  private apiUrl = 'api/puzzle'; // Opdateret base URL
 
   // Henter dagens puslespil (cached på serveren)
   getDailyPuzzle(): Observable<Puzzle> {
